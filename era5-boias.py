@@ -4,14 +4,14 @@ import math
 import os
 import time
 
-# boia: (lat, lon, margem). margem 0 = ponto único; 0.5 = quadrado de ±0,5°
+# boia: (latitude, longitude, margem)
 boias = {
     "41004": (32.5, -79.0, 0.0),
     "41040": (14.5, -53.0, 0.0),
     "46080": (58.0, -150.0, 0.5),
 }
 
-# em ordem: (boia, ano, mês)
+# (boia, ano, mês)
 tarefas = [
     ("41004", 2025, 1),
     ("41040", 2019, 1),
@@ -31,7 +31,7 @@ def pedir(boia, ano, mes, ini, fim):
     area = [lat + m, lon - m, lat - m, lon + m]
     arq = f'era5_{boia}_{ano}_{mes:02d}_d{ini:02d}-{fim:02d}_3h.grib'
     if os.path.exists(arq):
-        print("já existia", arq, flush=True)
+        print("já existe", arq, flush=True)
         return
     c = cdsapi.Client()
     while True:
@@ -48,7 +48,7 @@ def pedir(boia, ano, mes, ini, fim):
             return
         except Exception as e:
             if "queued requests" in str(e):
-                print("fila cheia, espero 10 min:", arq, flush=True)
+                print("fila cheia, espera 10 min:", arq, flush=True)
                 time.sleep(600)
                 continue
             print("ERRO", arq, e, flush=True)
@@ -56,7 +56,6 @@ def pedir(boia, ano, mes, ini, fim):
 
 for boia, ano, mes in tarefas:
     blocos = blocos_do_mes(ano, mes)
-    # janeiro/2025 da 41004: o bloco 1-10 já está na fila, é baixado à parte
     if (boia, ano, mes) == ("41004", 2025, 1):
         blocos = [(11, 20), (21, 25), (26, 31)]
     for ini, fim in blocos:
