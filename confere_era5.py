@@ -1,6 +1,8 @@
 import xarray as xr
 import numpy as np
 
+# Confere se os dados foram baixados corretamente
+
 ds = xr.open_dataset("era5_41004_2025_01_d01.grib", engine="cfgrib")
 print(ds)
 

@@ -1,5 +1,7 @@
 import cdsapi
 
+# Script criado para fazer um pedido teste
+
 boia, lat, lon = "41004", 32.5, -79.0
 ano, mes = 2025, 1
 ini, fim = 1, 10

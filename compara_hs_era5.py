@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+# Calculo do Hs e comparação com a boia (pelo código, só está funcionando no computador de origem, pois os caminhos seguem as pastas existentes lá)
+
 
 pkl = os.path.expanduser(
     "~/Desktop/ic/espectral-wave-data/spectral-wave-data-analysis-main/"

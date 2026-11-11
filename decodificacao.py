@@ -1,14 +1,16 @@
 import numpy as np
 import xarray as xr
 
+# Arquivo geral para decodificar os dados baixados
+
 arquivo = "era5_41004_2025_01_d01.grib"
 ds = xr.open_dataset(arquivo, engine="cfgrib")
 print(ds)
 a = ds["d2fd"].squeeze(["latitude", "longitude"])
 a = a.transpose("time", "directionNumber", "frequencyNumber")
 
-# 1) log10 -> densidade; vazio vira zero
-S = np.nan_to_num(10.0 ** a.values, nan=0.0)      # m²/Hz/rad, formato (hora, direção, frequência)
+# log10, vazio vira zero
+S = np.nan_to_num(10.0 ** a.values, nan=0.0)      # m²/Hz/rad, (hora, direção, frequência)
 tempos = a["time"].values
 
 n_hora, n_dir, n_freq = S.shape

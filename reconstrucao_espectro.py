@@ -5,25 +5,26 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.interpolate import RectBivariateSpline
 
-# ---- escolha aqui ----
+# Reconstrução do espectro direcional da boia e comparação com os dados do ERA5 
+
 boia_id, ano = "41004", 2025
-instante = pd.Timestamp("2025-01-06 20:00")      # hora do ERA5 (UTC)
-fmin, fmax = 0.0345, 0.485                       # faixa de frequências comum
+instante = pd.Timestamp("2025-01-06 20:00")      
+fmin, fmax = 0.0345, 0.485                     
 npz = os.path.expanduser("~/Desktop/ic/era5/era5_41004_2025_01_d01-07.npz")
 pkl = os.path.expanduser(
-    f"~/Desktop/ic/espectral-wave-data/spectral-wave-data-analysis-main/"
-    f"dados/{boia_id}_{ano}/dados_{boia_id}_{ano}.pkl")
-# ----------------------
+    f"~/Desktop/ic/espectral-wave-data/spectral-wave-data-analysis-main/dados/{boia_id}_{ano}/dados_{boia_id}_{ano}.pkl"
+)
 
-# ---- ERA5 ----
+
+# ERA5
 e = np.load(npz)
 S_all, freq_e, dir_e = e["S"], e["freq"], e["dir_de"]
 tempos = pd.to_datetime(e["tempos"])
 i_t = int(np.argmin(np.abs((tempos - instante).values)))
 hora_e = tempos[i_t]
-S_e = S_all[i_t].T                                # (frequência, direção), m²/Hz/rad
+S_e = S_all[i_t].T                                # m²/Hz/rad
 
-# ---- boia: dados do instante ----
+# boia
 with open(pkl, "rb") as f:
     d = pickle.load(f)
 
@@ -56,7 +57,7 @@ titulo = (f"Boia {boia_id} | {hora_e:%d/%m/%Y} | "
           f"ERA5 às {hora_e:%H:%M} UTC, boia às {t_reg:%H:%M} UTC")
 print(titulo)
 
-# ---- MEM de Hashimoto e Kobune (mesma função do valida_reconstrucao.py) ----
+# MEM de Hashimoto e Kobune
 ang_g = np.arange(0, 361, 1)
 ang_r = np.radians(ang_g)
 dth = ang_r[1] - ang_r[0]
@@ -108,15 +109,15 @@ for k in range(len(fb)):
     if ok:
         S_hk[k] = E_b[k] * D
 
-# ---- faixa comum ----
+# faixa comum
 m_e = (freq_e >= fmin) & (freq_e <= fmax)
 m_b = (fb >= fmin) & (fb <= fmax)
 sem_mem = int(np.isnan(S_hk[m_b, 0]).sum())
 print(f"frequências da boia na faixa comum: {int(m_b.sum())} | sem MEM: {sem_mem}")
 
-# ---- energia por direção (integrada em frequência na faixa comum) ----
-G_e = np.trapezoid(S_e[m_e], x=freq_e[m_e], axis=0)                      # (24,)
-G_b1 = np.trapezoid(np.nan_to_num(S_hk[m_b]), x=fb[m_b], axis=0)         # (361,)
+# energia por direção
+G_e = np.trapezoid(S_e[m_e], x=freq_e[m_e], axis=0)                 
+G_b1 = np.trapezoid(np.nan_to_num(S_hk[m_b]), x=fb[m_b], axis=0)         
 setor = ang_g[:-1] // 15
 G_b = np.array([G_b1[:-1][setor == k].mean() for k in range(24)])        # setores de 15°
 p_e = G_e / G_e.sum()
@@ -132,7 +133,7 @@ print(f"setor de pico: ERA5 {dir_e[np.argmax(p_e)]:.1f}° | boia (HK) {dir_e[np.
 
 nome = f"{boia_id}_{hora_e:%Y%m%d_%H%M}"
 
-# ---- gráfico 1: mapas polares (ERA5 interpolado para visualização) ----
+# mapas polares
 conv = np.pi / 180                                  # m²/Hz/rad -> m²/Hz/grau
 S_e_g, S_hk_g = S_e * conv, S_hk * conv
 vmax = max(np.nanmax(S_e_g[m_e]), np.nanmax(S_hk_g[m_b]))
@@ -166,7 +167,7 @@ fig.colorbar(cs, ax=axs, shrink=0.75, pad=0.04,
 fig.savefig(f"polar_era5_vs_boia_{nome}.png", dpi=300, bbox_inches="tight")
 plt.show()
 
-# ---- gráfico 2: energia por direção ----
+# energia por direção
 plt.figure(figsize=(9, 4.8))
 plt.bar(dir_e, 100 * p_e, width=15, alpha=0.5, label=f"ERA5 (direção média {dm_e:.0f}°)")
 plt.plot(dir_e, 100 * p_b, "o-", color="purple",

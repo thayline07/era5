@@ -4,6 +4,8 @@ import math
 import os
 import time
 
+# Script criado para fazer o pedido dos dados do primeiro mês (janeiro) das três boias de 3 em 3 horas, em blocos de 10 dias no máximo.
+
 # boia: (latitude, longitude, margem)
 boias = {
     "41004": (32.5, -79.0, 0.0),

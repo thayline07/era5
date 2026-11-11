@@ -2,6 +2,8 @@ import glob
 import numpy as np
 import xarray as xr
 
+# Script criado para decodificar os dados dos 7 dias que foram baixados da boia 41004, os 7 primeiros dias de janeiro de 2025, e salvar em um arquivo npz.
+
 def decodifica(arquivo):
     ds = xr.open_dataset(arquivo, engine="cfgrib")
     a = ds["d2fd"].squeeze(["latitude", "longitude"])
