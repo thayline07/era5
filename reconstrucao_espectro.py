@@ -5,16 +5,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.interpolate import RectBivariateSpline
 
-# Reconstrução do espectro direcional da boia e comparação com os dados do ERA5 
-
-boia_id, ano = "41004", 2025
-instante = pd.Timestamp("2025-01-06 20:00")      
-fmin, fmax = 0.0345, 0.485                     
-npz = os.path.expanduser("~/Desktop/ic/era5/era5_41004_2025_01_d01-07.npz")
+# 41004 (2025) | 41040 (2019) | 46080 (2025)
+boia_id, ano = "41004", 2025                     
+instante = pd.Timestamp("2025-01-06 21:00")      
+fmin, fmax = 0.0345, 0.485                       
+npz = os.path.expanduser(f"~/Desktop/ic/era5/era5_{boia_id}_{ano}_01_3h.npz")
 pkl = os.path.expanduser(
-    f"~/Desktop/ic/espectral-wave-data/spectral-wave-data-analysis-main/dados/{boia_id}_{ano}/dados_{boia_id}_{ano}.pkl"
-)
-
+    f"~/Desktop/ic/espectral-wave-data/spectral-wave-data-analysis-main/"
+    f"dados/{boia_id}_{ano}/dados_{boia_id}_{ano}.pkl")
 
 # ERA5
 e = np.load(npz)
@@ -22,7 +20,7 @@ S_all, freq_e, dir_e = e["S"], e["freq"], e["dir_de"]
 tempos = pd.to_datetime(e["tempos"])
 i_t = int(np.argmin(np.abs((tempos - instante).values)))
 hora_e = tempos[i_t]
-S_e = S_all[i_t].T                                # m²/Hz/rad
+S_e = S_all[i_t].T                               
 
 # boia
 with open(pkl, "rb") as f:
@@ -97,7 +95,7 @@ def mem_shannon(m, tol=1e-10, maxiter=200):
         lam, D, F = lam_novo, D_novo, F_novo
     return D, bool(np.max(np.abs(m - phi @ D * dth)) < 1e-6)
 
-S_hk = np.full((len(fb), len(ang_g)), np.nan)     # m²/Hz/rad
+S_hk = np.full((len(fb), len(ang_g)), np.nan)    
 for k in range(len(fb)):
     if np.isnan([E_b[k], a1[k], a2[k], r1[k], r2[k]]).any():
         continue
@@ -109,17 +107,17 @@ for k in range(len(fb)):
     if ok:
         S_hk[k] = E_b[k] * D
 
-# faixa comum
+# ---- faixa comum ----
 m_e = (freq_e >= fmin) & (freq_e <= fmax)
 m_b = (fb >= fmin) & (fb <= fmax)
 sem_mem = int(np.isnan(S_hk[m_b, 0]).sum())
 print(f"frequências da boia na faixa comum: {int(m_b.sum())} | sem MEM: {sem_mem}")
 
-# energia por direção
-G_e = np.trapezoid(S_e[m_e], x=freq_e[m_e], axis=0)                 
-G_b1 = np.trapezoid(np.nan_to_num(S_hk[m_b]), x=fb[m_b], axis=0)         
+
+G_e = np.trapezoid(S_e[m_e], x=freq_e[m_e], axis=0)                     
+G_b1 = np.trapezoid(np.nan_to_num(S_hk[m_b]), x=fb[m_b], axis=0)        
 setor = ang_g[:-1] // 15
-G_b = np.array([G_b1[:-1][setor == k].mean() for k in range(24)])        # setores de 15°
+G_b = np.array([G_b1[:-1][setor == k].mean() for k in range(24)])       
 p_e = G_e / G_e.sum()
 p_b = G_b / G_b.sum()
 
@@ -134,14 +132,15 @@ print(f"setor de pico: ERA5 {dir_e[np.argmax(p_e)]:.1f}° | boia (HK) {dir_e[np.
 nome = f"{boia_id}_{hora_e:%Y%m%d_%H%M}"
 
 # mapas polares
-conv = np.pi / 180                                  # m²/Hz/rad -> m²/Hz/grau
+conv = np.pi / 180                                 
 S_e_g, S_hk_g = S_e * conv, S_hk * conv
 vmax = max(np.nanmax(S_e_g[m_e]), np.nanmax(S_hk_g[m_b]))
 niveis = np.linspace(0, vmax, 30)
 
 lf = np.log(freq_e)
-th = np.radians(dir_e)                              # 7,5°, 22,5°, ..., 352,5°
-pad = 3                                             # repete colunas para fechar o círculo
+th = np.radians(dir_e)                              
+# repete colunas para fechar o círculo
+pad = 3                                             
 th_p = np.concatenate([th[-pad:] - 2 * np.pi, th, th[:pad] + 2 * np.pi])
 Z = np.concatenate([S_e_g[:, -pad:], S_e_g, S_e_g[:, :pad]], axis=1)
 spl = RectBivariateSpline(lf, th_p, Z, kx=3, ky=3)
@@ -165,7 +164,7 @@ fig.suptitle(titulo, fontsize=13, fontweight="bold")
 fig.colorbar(cs, ax=axs, shrink=0.75, pad=0.04,
              label="Densidade de Energia ($m^2/Hz/grau$)")
 fig.savefig(f"polar_era5_vs_boia_{nome}.png", dpi=300, bbox_inches="tight")
-plt.show()
+plt.close()
 
 # energia por direção
 plt.figure(figsize=(9, 4.8))
@@ -178,4 +177,4 @@ plt.ylabel("Energia na faixa comum, por setor de 15° (%)")
 plt.title(titulo, fontsize=10)
 plt.legend(); plt.grid(alpha=0.4)
 plt.savefig(f"direcao_era5_vs_boia_{nome}.png", dpi=300, bbox_inches="tight")
-plt.show()
+plt.close()
