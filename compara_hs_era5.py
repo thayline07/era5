@@ -4,8 +4,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Calculo do Hs e comparação com a boia (pelo código, só está funcionando no computador de origem, pois os caminhos seguem as pastas existentes lá)
-
 
 pkl = os.path.expanduser(
     "~/Desktop/ic/espectral-wave-data/spectral-wave-data-analysis-main/"
@@ -19,7 +17,7 @@ dtheta = np.radians(15.0)
 E_f = S.sum(axis=1) * dtheta                                   
 Hs_era5 = 4.0 * np.sqrt(np.trapezoid(E_f, x=freq_e, axis=1))
 
-# Hs da boia, a partir do espectro
+# Hs da boia
 with open(pkl, "rb") as f:
     w = pickle.load(f)["w"]
 freq_b = np.array([float(c) for c in w.columns[5:]])
@@ -30,7 +28,7 @@ Hs_boia = 4.0 * np.sqrt(m0_b)
 t_boia = pd.to_datetime(dict(year=w["#YY"], month=w["MM"], day=w["DD"],
                              hour=w["hh"], minute=w["mm"]))
 
-# tempo (janela de 20 min)
+# tempos diferentes, pega o tempo mais próximo (janela de 20 minutos)
 era = pd.DataFrame({"t": pd.to_datetime(tempos).astype("datetime64[ns]"), "era5": Hs_era5})
 boia = pd.DataFrame({"t": t_boia.astype("datetime64[ns]"), "boia": Hs_boia}).sort_values("t")
 par = pd.merge_asof(era.sort_values("t"), boia, on="t",
@@ -47,7 +45,7 @@ print(f"RMSE = {rmse:.3f} m")
 print(f"r = {r:.3f}")
 print(f"Hs máximo: boia {x.max():.2f} m | ERA5 {y.max():.2f} m")
 
-# gráfico 1: dispersão
+# dispersão
 lim = 1.05 * max(x.max(), y.max())
 plt.figure(figsize=(6, 6))
 plt.scatter(x, y, s=18, alpha=0.7)
@@ -61,7 +59,7 @@ plt.legend(); plt.grid(alpha=0.4)
 plt.savefig("dispersao_hs_era5_41004.png", dpi=300, bbox_inches="tight")
 plt.show()
 
-# gráfico 2: série temporal 
+# série temporal 
 plt.figure(figsize=(9, 4))
 plt.plot(par["t"], par["boia"], "o-", markersize=3, label="Boia 41004")
 plt.plot(par["t"], par["era5"], "s-", markersize=3, label="ERA5")
